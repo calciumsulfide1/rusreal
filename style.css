@@ -36,39 +36,6 @@ canvas {
   background: #111318;
 }
 
-/* Фейк-достижения */
-.toast {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: rgba(20, 20, 25, 0.95);
-  border: 2px solid #ff3366;
-  border-radius: 6px;
-  padding: 10px 16px;
-  box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
-  z-index: 10;
-  transition: all 0.3s ease;
-  animation: slideIn 0.4s ease-out;
-}
-
-.toast.hidden {
-  display: none;
-}
-
-.toast-title {
-  color: #ff3366;
-  font-size: 11px;
-  font-weight: bold;
-  letter-spacing: 1px;
-}
-
-.toast-body {
-  color: #ffffff;
-  font-size: 14px;
-  margin-top: 4px;
-  font-weight: bold;
-}
-
 /* Ехидные комментарии смерти */
 #death-quote {
   position: absolute;
@@ -187,11 +154,6 @@ canvas {
   border-radius: 25px;
   font-size: 12px;
   font-weight: bold;
-}
-
-@keyframes slideIn {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
 }
 
 @keyframes pulse {
