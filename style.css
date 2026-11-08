@@ -36,10 +36,9 @@ canvas {
   background: #111318;
 }
 
-/* Ехидные комментарии смерти */
 #death-quote {
   position: absolute;
-  top: 35%;
+  top: 32%;
   width: 100%;
   text-align: center;
   font-size: 20px;
@@ -55,7 +54,6 @@ canvas {
   display: none;
 }
 
-/* Финальная победная плашка */
 .modal {
   position: absolute;
   inset: 0;
@@ -81,7 +79,7 @@ canvas {
 }
 
 .victory-banner {
-  font-size: 26px;
+  font-size: 24px;
   color: #00ffa3;
   text-shadow: 0 0 12px rgba(0, 255, 163, 0.6);
   margin-bottom: 12px;
@@ -103,14 +101,8 @@ canvas {
   font-size: 14px;
   cursor: pointer;
   border-radius: 4px;
-  transition: transform 0.1s, background 0.2s;
 }
 
-.victory-card button:active {
-  transform: scale(0.95);
-}
-
-/* Экранное управление для телефонов */
 #touch-controls {
   position: absolute;
   bottom: 10px;
