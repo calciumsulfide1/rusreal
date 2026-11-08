@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>rвест</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div id="game-container">
+    <canvas id="canvas" width="800" height="450"></canvas>
+
+    <!-- Саркастичные цитаты при смерти -->
+    <div id="death-quote" class="hidden"></div>
+
+    <!-- Фейковые достижения -->
+    <div id="achievement-toast" class="toast hidden">
+      <div class="toast-title">🏆 ДОСТИЖЕНИЕ ПОЛУЧЕНО!</div>
+      <div id="toast-text" class="toast-body"></div>
+    </div>
+
+    <!-- Финальная победная плашка -->
+    <div id="victory-modal" class="modal hidden">
+      <div class="victory-card">
+        <h1 class="victory-banner">22095 ХЭВИ МЕТАЛ ВАЙПЕРР</h1>
+        <p>Ты прошел.</p>
+        <button id="restart-btn" onclick="restartGame()">Сыграть еще раз</button>
+      </div>
+    </div>
+
+    <!-- Тач-управление для смартфонов -->
+    <div id="touch-controls">
+      <div class="touch-group left-group">
+        <button id="btn-left" class="t-btn">◀</button>
+        <button id="btn-right" class="t-btn">▶</button>
+      </div>
+      <div class="touch-group right-group">
+        <button id="btn-jump" class="t-btn action-btn">ПРОФИТ / ПРЫЖОК</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
