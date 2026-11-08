@@ -1,7 +1,7 @@
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-// Ваши цитаты смерти
+// Объединенные ехидные комментарии смерти (включая бывшие ачивки)
 const DEATH_QUOTES = [
   "может нахер этот квест?",
   "походу сегодня без баллов интуиции",
@@ -9,11 +9,7 @@ const DEATH_QUOTES = [
   "царь вернулся",
   "пока ахуевшая",
   "походу тебе уготовлена другая роль",
-  "ребеночек идет за тобой..."
-];
-
-// Ваши achievements
-const ACHIEVEMENTS = [
+  "ребеночек идет за тобой...",
   "НЕ питомец эвелины",
   "НЕ вписался в лор",
   "убит хтонью",
@@ -22,124 +18,101 @@ const ACHIEVEMENTS = [
 
 let player = {
   x: 40,
-  y: 350,
+  y: 340,
   w: 20,
   h: 30,
   vx: 0,
   vy: 0,
-  speed: 3.5,
-  jumpPower: -9.5,
+  speed: 4.0,
+  jumpPower: -10.5,
   grounded: false
 };
 
 const keys = { left: false, right: false, jump: false };
 let gameState = 'PLAYING'; // PLAYING, DEAD, WON
-let toastTimer = null;
 let currentQuote = "";
 
-// Локация/Карта (Панельки, платформа, провалы и тролль-элементы)
 let platforms = [];
 let chthonEnemies = [];
-let exitDoor = { x: 740, y: 80, w: 30, h: 45 };
+let exitDoor = { x: 740, y: 75, w: 30, h: 45 };
 
 function initLevel() {
   player.x = 40;
-  player.y = 350;
+  player.y = 340;
   player.vx = 0;
   player.vy = 0;
   gameState = 'PLAYING';
   document.getElementById('death-quote').classList.add('hidden');
 
+  // Платформы выстроены так, чтобы логика уровня была проходимой при аккуратном тайминге
   platforms = [
     // Земля
-    { x: 0, y: 400, w: 220, h: 50, type: 'normal' },
-    { x: 280, y: 400, w: 200, h: 50, type: 'normal' },
-    { x: 550, y: 400, w: 250, h: 50, type: 'normal' },
+    { x: 0, y: 400, w: 240, h: 50, type: 'normal' },
+    { x: 290, y: 400, w: 200, h: 50, type: 'normal' },
+    { x: 540, y: 400, w: 260, h: 50, type: 'normal' },
 
-    // Поддельная платформа (проваливается при наступании)
-    { x: 140, y: 310, w: 90, h: 15, type: 'fake_fall', triggered: false, vy: 0 },
+    // Осторожная падающая платформа (падает медленнее, давая время оттолкнуться)
+    { x: 150, y: 310, w: 90, h: 15, type: 'fake_fall', triggered: false, vy: 0 },
     
-    // Бетонные балконы и этажи панельки
+    // Бетонные балконы
     { x: 40, y: 220, w: 100, h: 15, type: 'normal' },
-    { x: 200, y: 160, w: 120, h: 15, type: 'normal' },
-    { x: 380, y: 230, w: 80, h: 15, type: 'normal' },
-    { x: 500, y: 160, w: 100, h: 15, type: 'normal' },
-    { x: 650, y: 125, w: 150, h: 15, type: 'normal' }, // Платформа с выходом
+    { x: 190, y: 170, w: 120, h: 15, type: 'normal' },
+    { x: 360, y: 230, w: 100, h: 15, type: 'normal' },
+    { x: 500, y: 170, w: 110, h: 15, type: 'normal' },
+    { x: 640, y: 120, w: 160, h: 15, type: 'normal' }, // Платформа с выходом
 
-    // Ловушка-платформа (исчезает перед финишем)
-    { x: 610, y: 220, w: 60, h: 15, type: 'vanish', touched: false }
+    // Проходимый перекат перед финишем
+    { x: 610, y: 230, w: 70, h: 15, type: 'normal' }
   ];
 
-  // Враги: Безликие черные хтони
+  // Враги: Безликие черные хтони со стабильной траекторией
   chthonEnemies = [
-    { x: 300, y: 370, w: 24, h: 30, speed: 1.5, minX: 280, maxX: 450 },
-    { x: 210, y: 130, w: 24, h: 30, speed: 2.0, minX: 200, maxX: 300 },
-    { x: 520, y: 130, w: 24, h: 30, speed: 2.5, minX: 500, maxX: 580 },
-    
-    // Замаскированная хтонь (появляется только если подойти близко)
-    { x: 100, y: 190, w: 24, h: 30, speed: 0, hidden: true, active: false }
+    { x: 310, y: 370, w: 24, h: 30, speed: 1.2, minX: 290, maxX: 450 },
+    { x: 210, y: 140, w: 24, h: 30, speed: 1.5, minX: 195, maxX: 280 },
+    { x: 520, y: 140, w: 24, h: 30, speed: 1.8, minX: 505, maxX: 580 },
+    { x: 60, y: 190, w: 24, h: 30, speed: 1.0, minX: 45, maxX: 110 }
   ];
 }
 
-// Показ фейковых ачивок
-function showAchievement(text) {
-  const toast = document.getElementById('achievement-toast');
-  const toastText = document.getElementById('toast-text');
-  toastText.innerText = `«${text}»`;
-  toast.classList.remove('hidden');
-
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    toast.classList.add('hidden');
-  }, 3500);
-}
-
-// Обработка гибели игрока
+// Обработка гибели
 function killPlayer() {
   if (gameState === 'DEAD') return;
   gameState = 'DEAD';
 
-  // Выбираем случайную цитату из списка
   currentQuote = DEATH_QUOTES[Math.floor(Math.random() * DEATH_QUOTES.length)];
   const qElem = document.getElementById('death-quote');
   qElem.innerText = currentQuote;
   qElem.classList.remove('hidden');
 
-  // Выдаем рандомное фейк-достижение
-  const randomAch = ACHIEVEMENTS[Math.floor(Math.random() * ACHIEVEMENTS.length)];
-  showAchievement(randomAch);
-
   setTimeout(() => {
     initLevel();
-  }, 1800);
+  }, 1600);
 }
 
-// Главный цикл обновлений
 function update() {
   if (gameState !== 'PLAYING') return;
 
-  // Движение игрока
   if (keys.left) player.vx = -player.speed;
   else if (keys.right) player.vx = player.speed;
   else player.vx = 0;
 
-  // Прыжок
   if (keys.jump && player.grounded) {
     player.vy = player.jumpPower;
     player.grounded = false;
   }
 
-  // Гравитация
-  player.vy += 0.45;
+  player.vy += 0.48; // Гравитация
 
   player.x += player.vx;
   player.y += player.vy;
   player.grounded = false;
 
-  // Коллизии с платформами
-  for (let p of platforms) {
-    if (p.type === 'vanish' && p.touched) continue;
+  // Ограничение по краям экрана
+  if (player.x < 0) player.x = 0;
+  if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 
+  // Коллизия с платформами
+  for (let p of platforms) {
     if (
       player.x < p.x + p.w &&
       player.x + player.w > p.x &&
@@ -150,41 +123,27 @@ function update() {
       player.vy = 0;
       player.y = p.y - player.h;
 
-      // Срабатывание тролль-механик платформ
       if (p.type === 'fake_fall') p.triggered = true;
-      if (p.type === 'vanish') p.touched = true;
     }
 
-    // Движение падающей поддельной платформы
     if (p.type === 'fake_fall' && p.triggered) {
-      p.vy += 0.5;
+      p.vy += 0.25; // Медленный подлый спуск
       p.y += p.vy;
     }
   }
 
-  // Падение в бездну
-  if (player.y > canvas.height + 50) {
+  // Падение
+  if (player.y > canvas.height + 40) {
     killPlayer();
   }
 
-  // Обновление безликих черных хтоней
+  // Хтони
   for (let enemy of chthonEnemies) {
-    // Триггер скрытой хтони
-    if (enemy.hidden) {
-      if (Math.abs(player.x - enemy.x) < 80 && Math.abs(player.y - enemy.y) < 50) {
-        enemy.hidden = false;
-        enemy.active = true;
-        enemy.speed = 3.0; // Внезапно бежит на игрока
-      }
-      if (!enemy.active) continue;
-    }
-
     enemy.x += enemy.speed;
     if (enemy.x < enemy.minX || enemy.x > enemy.maxX) {
       enemy.speed *= -1;
     }
 
-    // Столкновение с хтонью
     if (
       player.x < enemy.x + enemy.w &&
       player.x + player.w > enemy.x &&
@@ -195,7 +154,7 @@ function update() {
     }
   }
 
-  // Проверка победы (дошел до двери)
+  // Финиш
   if (
     player.x < exitDoor.x + exitDoor.w &&
     player.x + player.w > exitDoor.x &&
@@ -207,23 +166,21 @@ function update() {
   }
 }
 
-// Отрисовка графика в стиле Русреал
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Небо / Ночной серый город
+  // Фон
   ctx.fillStyle = "#14161d";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Силуэты панельных домов на фоне
+  // Дома
   ctx.fillStyle = "#0c0d12";
   ctx.fillRect(50, 100, 120, 350);
   ctx.fillRect(220, 70, 140, 380);
   ctx.fillRect(450, 140, 110, 310);
   ctx.fillRect(620, 90, 130, 360);
 
-  // Окна в панельках (кое-где горит тусклый желтый/зеленый свет)
-  ctx.fillStyle = "#2c2817";
+  // Окна
   for(let bx = 70; bx < 750; bx += 60) {
     for(let by = 120; by < 380; by += 40) {
       if ((bx + by) % 3 === 0) {
@@ -233,20 +190,16 @@ function draw() {
     }
   }
 
-  // Отрисовка бетонных платформ
+  // Платформы
   for (let p of platforms) {
-    if (p.type === 'vanish' && p.touched) continue;
     ctx.fillStyle = p.type === 'fake_fall' ? "#4a4e59" : "#333742";
     ctx.fillRect(p.x, p.y, p.w, p.h);
     ctx.strokeStyle = "#22252e";
     ctx.strokeRect(p.x, p.y, p.w, p.h);
   }
 
-  // Отрисовка безликих черных хтоней
+  // Хтони
   for (let enemy of chthonEnemies) {
-    if (enemy.hidden) continue;
-
-    // Черный силуэт хтони
     ctx.fillStyle = "#000000";
     ctx.beginPath();
     ctx.ellipse(
@@ -258,23 +211,22 @@ function draw() {
     );
     ctx.fill();
 
-    // Белые пустые глазницы
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(enemy.x + 4, enemy.y + 8, 4, 4);
     ctx.fillRect(enemy.x + 14, enemy.y + 8, 4, 4);
   }
 
-  // Дверь выхода (Подъездная дверь с домофоном)
+  // Дверь
   ctx.fillStyle = "#5c2b2b";
   ctx.fillRect(exitDoor.x, exitDoor.y, exitDoor.w, exitDoor.h);
   ctx.fillStyle = "#ffe600";
-  ctx.fillRect(exitDoor.x + 4, exitDoor.y + 20, 4, 4); // Светящаяся панель домофона
+  ctx.fillRect(exitDoor.x + 4, exitDoor.y + 20, 4, 4);
 
-  // Игрок (Стилизованный персонаж)
+  // Игрок
   ctx.fillStyle = "#e67e22";
   ctx.fillRect(player.x, player.y, player.w, player.h);
   ctx.fillStyle = "#ffffff";
-  ctx.fillRect(player.x + (keys.left ? 2 : 12), player.y + 6, 5, 5); // Глаз
+  ctx.fillRect(player.x + (keys.left ? 2 : 12), player.y + 6, 5, 5);
 }
 
 function gameLoop() {
@@ -288,7 +240,7 @@ function restartGame() {
   initLevel();
 }
 
-// Слушатели событий клавиатуры
+// Ввод
 window.addEventListener('keydown', (e) => {
   if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
   if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
@@ -301,7 +253,6 @@ window.addEventListener('keyup', (e) => {
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') keys.jump = false;
 });
 
-// Слушатели для тач-управления (экранные кнопки на телефоне)
 const bindTouch = (id, keyName) => {
   const btn = document.getElementById(id);
   btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; });
@@ -314,6 +265,5 @@ bindTouch('btn-left', 'left');
 bindTouch('btn-right', 'right');
 bindTouch('btn-jump', 'jump');
 
-// Старт игры
 initLevel();
 gameLoop();
